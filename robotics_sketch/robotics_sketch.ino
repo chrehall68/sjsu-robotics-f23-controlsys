@@ -2,9 +2,6 @@
 #include <Servo.h>
 #include <math.h>
 
-// used to control the servo
-Servo servo;
-
 // basic print
 template <typename T, typename... Args>
 void print(T val, Args... args)
@@ -138,6 +135,13 @@ namespace mpu6050
   }
 };
 
+// globals
+
+// used to control the servo
+Servo servo;
+// used for the offset (+ = cw, - = ccw)
+int degreeOffset = 0;
+
 void setup()
 {
   Serial.begin(9600);
@@ -163,10 +167,25 @@ void loop()
   double roll = mpu6050::calculateRoll(ax, az, ay);
   int curPosition = servo.read();
 
-  println("x accel: ", ax, ", y accel: ", ay, ", z accel: ", az, ", roll: ", roll, ", servo pos: ", curPosition);
+  println("x accel: ", ax, ", y accel: ", ay, ", z accel: ", az, ", roll: ", roll, ", servo pos: ", curPosition, ", offset: ", degreeOffset);
 
   // update servo to where we need to go
-  servo.write(90 - (int)roll);
+  int degree = 90 - (int)roll + degreeOffset;
+  if (degree < 0)
+  {
+    degree = 0;
+  }
+  if (degree > 180)
+  {
+    degree = 180;
+  }
+  servo.write(degree);
+
+  // update offset if available
+  if (Serial.available())
+  {
+    degreeOffset = Serial.readString().toInt();
+  }
 
   delay(100);
 }
